@@ -1,0 +1,111 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>RGraph - Graph Operations</title>
+
+<!-- CSS Files -->
+<link type="text/css" href="css/base.css" rel="stylesheet" />
+<link type="text/css" href="css/RGraph.css" rel="stylesheet" />
+
+<!--[if IE]><script language="javascript" type="text/javascript" src="../../Extras/excanvas.js"></script><![endif]-->
+
+<!-- JIT Library File -->
+<script language="javascript" type="text/javascript" src="js/jit.js"></script>
+
+<!-- Example File -->
+<script language="javascript" type="text/javascript" src="js/sample.js"></script>
+</head>
+
+<body onload="init();">
+<div id="container">
+
+<div id="left-container">
+
+<div class="text">
+<h4>
+Graph Operations    
+</h4> 
+
+            You can do the following operations with the RGraph<br /><br />
+            1.- Removing subtrees or nodes<br /><br />
+            2.- Removing edges<br /><br />
+            3.- Adding another graph, also called sum<br /><br />
+            4.- Morphing (or transforming) the graph into another one<br />
+            
+</div>
+
+<div id="id-list"></div>
+
+
+<div style="text-align:center;"><a href="js/sample.js">See the Example Code</a></div>            
+</div>
+
+<div id="center-container">
+    <div id="infovis"></div>    
+</div>
+
+<div id="right-container">
+
+
+<h4>1.- Add Node</h4>
+
+<table>
+    <tr>
+        <td>
+            parentId:
+        </td>
+        <td>
+            <input id="parentId" type="text"  readonly="readonly"/>
+        </td>
+    </tr>
+    
+    <tr>
+        <td>
+            nodeId:
+        </td>
+        <td>
+            <input id="nodeId" type="text"/>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Node name:
+        </td>
+        <td>
+            <input id="nodeDisplay" type="text"/>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Tag:
+        </td>
+        <td>
+            <input id="nodeTags" type="text"/>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Description:
+        </td>
+        <td>
+            <input id="nodeDescription" type="text"/>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <input type="button" value="Sum" id="sum" />    
+        </td>
+        <td>
+            <input type="button" value="Refresh" onclick="window.location = window.location" />
+        </td>
+    </tr>
+</table>
+
+
+</div>
+
+<div id="log"></div>
+</div>
+</body>
+</html>
