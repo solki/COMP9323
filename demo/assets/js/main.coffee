@@ -17,6 +17,7 @@ render = (stage, userData, mapData)->
   INFO_TEXT_SIZE = 18
   layer = new Konva.Layer()
   map_nodes = {}
+  active_node = null
   getNode = (id)->
     layer.findOne('#node-'+id)
   hideNodeTree = (rootNode)->
@@ -80,6 +81,7 @@ render = (stage, userData, mapData)->
     nodeInfoBar.add(nodeAuthorText)
     nodeInfoBar.add(nodeVoteBtnGroup)
     nodeRect = new Konva.Rect
+      name: "node-bg"
       stroke: '#555'
       strokeWidth: 5
       fill: '#ddd'
@@ -104,6 +106,11 @@ render = (stage, userData, mapData)->
     nodeGroup.setId(nodeId)
     nodeGroup.on 'mousedown touchstart', ()->
       @.moveToTop()
+      if active_node == null or active_node != @
+        @.findOne('.node-bg').stroke('#375A7F')
+      if active_node != null and active_node != @
+        active_node.findOne('.node-bg').stroke('#555')
+      active_node = @
       stage.draw()
     nodeGroup.on 'dblclick dbltap', ()->
       currentNode = map_nodes[@.getId()]

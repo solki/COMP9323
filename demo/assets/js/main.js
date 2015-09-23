@@ -21,12 +21,13 @@
   };
 
   render = function(stage, userData, mapData) {
-    var INFO_TEXT_SIZE, NODE_WIDTH, TITLE_TEXT_SIZE, buildNode, getNode, hideNodeTree, i, layer, len, map_nodes, node, nodeGroup, nodeId, ref, toggleNode;
+    var INFO_TEXT_SIZE, NODE_WIDTH, TITLE_TEXT_SIZE, active_node, buildNode, getNode, hideNodeTree, i, layer, len, map_nodes, node, nodeGroup, nodeId, ref, toggleNode;
     NODE_WIDTH = 300;
     TITLE_TEXT_SIZE = 32;
     INFO_TEXT_SIZE = 18;
     layer = new Konva.Layer();
     map_nodes = {};
+    active_node = null;
     getNode = function(id) {
       return layer.findOne('#node-' + id);
     };
@@ -106,6 +107,7 @@
       nodeInfoBar.add(nodeAuthorText);
       nodeInfoBar.add(nodeVoteBtnGroup);
       nodeRect = new Konva.Rect({
+        name: "node-bg",
         stroke: '#555',
         strokeWidth: 5,
         fill: '#ddd',
@@ -135,6 +137,13 @@
       nodeGroup.setId(nodeId);
       nodeGroup.on('mousedown touchstart', function() {
         this.moveToTop();
+        if (active_node === null || active_node !== this) {
+          this.findOne('.node-bg').stroke('#375A7F');
+        }
+        if (active_node !== null && active_node !== this) {
+          active_node.findOne('.node-bg').stroke('#555');
+        }
+        active_node = this;
         return stage.draw();
       });
       nodeGroup.on('dblclick dbltap', function() {
