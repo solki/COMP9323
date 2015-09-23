@@ -21,7 +21,7 @@
   };
 
   render = function(stage, userData, mapData) {
-    var INFO_TEXT_SIZE, NODE_WIDTH, TITLE_TEXT_SIZE, active_node, buildNode, getNode, hideNodeTree, i, layer, layout, layoutLevel, len, map_nodes, node, nodeGroup, nodeId, ref, toggleNode;
+    var INFO_TEXT_SIZE, NODE_WIDTH, TITLE_TEXT_SIZE, active_node, buildLinks, buildNode, computeLinkPoints, getNode, hideNodeTree, i, layer, layout, layoutLevel, len, map_nodes, node, nodeGroup, nodeId, ref, rootNode, toggleNode;
     NODE_WIDTH = 200;
     TITLE_TEXT_SIZE = 18;
     INFO_TEXT_SIZE = 12;
@@ -45,7 +45,8 @@
           bg.show();
         }
       }
-      return rootNode.hide();
+      rootNode.hide();
+      return layer.findOne(".to-" + (rootNode.getId())).hide();
     };
     toggleNode = function(node) {
       var bg, collapsed, i, j, len, len1, nodeObj, ref, ref1, results, subNode, subNodeId;
@@ -57,6 +58,7 @@
         subNode = getNode(subNodeId);
         if (!subNode.isVisible()) {
           subNode.show();
+          layer.findOne(".to-" + (subNode.getId())).show();
         } else {
           collapsed = true;
           hideNodeTree(subNode);
@@ -149,6 +151,8 @@
         cornerRadius: 10
       });
       nodeGroup = new Konva.Group({
+        width: nodeRect.width(),
+        height: nodeRect.height(),
         draggable: true,
         visible: false
       });
@@ -219,7 +223,7 @@
           subNode = getNode(subNodeId);
           subNode.setPosition({
             x: base_offset_x + Math.cos(angle) * NODE_WIDTH * level * 1.2,
-            y: (stage.getHeight() - subNode.findOne('.node-bg').getHeight()) / 2 + Math.sin(angle) * NODE_WIDTH * level * 0.8
+            y: (stage.getHeight() - subNode.getHeight()) / 2 + Math.sin(angle) * NODE_WIDTH * level * 0.8
           });
           childNodes.push(subNode);
           if (childNodes.length === 1) {
@@ -233,15 +237,60 @@
         return layoutLevel(level + 1, first_angle, childNodes);
       }
     };
-    layout = function() {
-      var rootNode;
-      rootNode = getNode(mapData.root_node_id);
+    layout = function(rootNode) {
       rootNode.show();
       rootNode.setPosition({
         x: (stage.getWidth() - NODE_WIDTH) / 2,
-        y: (stage.getHeight() - rootNode.findOne('.node-bg').getHeight()) / 2
+        y: (stage.getHeight() - rootNode.getHeight()) / 2
       });
       return layoutLevel(1, -Math.PI / 2, [rootNode]);
+    };
+    computeLinkPoints = function(startNode, endNode) {
+      var h1, h2, w1, w2, x1, x2, y1, y2;
+      x1 = startNode.x();
+      y1 = startNode.y();
+      w1 = startNode.width();
+      h1 = startNode.height();
+      x2 = endNode.x();
+      y2 = endNode.y();
+      w2 = endNode.width();
+      h2 = endNode.height();
+      if (x1 > x2 + w2) {
+        return [x1, y1 + h1 / 2, x2 + w2, y2 + h2 / 2];
+      }
+      if (x1 + w1 < x2) {
+        return [x1 + w1, y1 + h1 / 2, x2, y2 + h2 / 2];
+      }
+      if (y1 > y2 + h2) {
+        return [x1 + w1 / 2, y1, x2 + w2 / 2, y2 + h2];
+      }
+      if (y1 + h1 < y2) {
+        return [x1 + w1 / 2, y1 + h1, x2 + w2 / 2, y2];
+      }
+      return [];
+    };
+    buildLinks = function(parentNode) {
+      var i, len, link, points, ref, results, subNode, subNodeId;
+      ref = map_nodes[parentNode.getId()].sub_nodes;
+      results = [];
+      for (i = 0, len = ref.length; i < len; i++) {
+        subNodeId = ref[i];
+        subNode = getNode(subNodeId);
+        points = computeLinkPoints(parentNode, subNode);
+        link = new Konva.Arrow({
+          name: "from-" + (parentNode.getId()) + " to-" + (subNode.getId()),
+          points: points,
+          pointerLength: 12,
+          pointerWidth: 12,
+          fill: 'black',
+          stroke: 'black',
+          strokeWidth: 4,
+          visible: false
+        });
+        layer.add(link);
+        results.push(buildLinks(subNode));
+      }
+      return results;
     };
     ref = mapData.node_list;
     for (i = 0, len = ref.length; i < len; i++) {
@@ -270,13 +319,50 @@
         active_node = this;
         return stage.draw();
       });
+      nodeGroup.on('dragmove', function() {
+        var endPoint, j, k, l, len1, len2, len3, len4, link, links, m, name, ref1, ref2, ref3, results, startPoint;
+        links = [];
+        ref1 = layer.find(".from-" + (this.getId()));
+        for (j = 0, len1 = ref1.length; j < len1; j++) {
+          link = ref1[j];
+          links.push(link);
+        }
+        ref2 = layer.find(".to-" + (this.getId()));
+        for (k = 0, len2 = ref2.length; k < len2; k++) {
+          link = ref2[k];
+          links.push(link);
+        }
+        results = [];
+        for (l = 0, len3 = links.length; l < len3; l++) {
+          link = links[l];
+          startPoint = null;
+          endPoint = null;
+          ref3 = link.name().split(' ');
+          for (m = 0, len4 = ref3.length; m < len4; m++) {
+            name = ref3[m];
+            if (name.indexOf('from-') === 0) {
+              startPoint = layer.findOne("#" + name.substr(5));
+            } else if (name.indexOf('to-') === 0) {
+              endPoint = layer.findOne("#" + name.substr(3));
+            }
+          }
+          if (startPoint !== null && endPoint !== null) {
+            results.push(link.points(computeLinkPoints(startPoint, endPoint)));
+          } else {
+            results.push(void 0);
+          }
+        }
+        return results;
+      });
       nodeGroup.on('dblclick dbltap', function() {
         toggleNode(this);
         return stage.draw();
       });
       layer.add(nodeGroup);
     }
-    layout();
+    rootNode = getNode(mapData.root_node_id);
+    layout(rootNode);
+    buildLinks(rootNode);
     return stage.add(layer);
   };
 
