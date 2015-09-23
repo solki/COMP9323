@@ -111,7 +111,7 @@ a {
 /*TOOLTIPS*/
 .tip {
     color: #111;
-    width: 139px;
+    width: 150px;
     background-color: white;
     border:1px solid #ccc;
     -moz-box-shadow:#555 2px 2px 8px;
@@ -123,4 +123,9 @@ a {
     font-size:10px;
     font-family:Verdana, Geneva, Arial, Helvetica, sans-serif;
     padding:7px;
+}
+.tip-title {
+  font-size: 11px;
+  text-align:left;
+  margin-bottom:2px;
 }
