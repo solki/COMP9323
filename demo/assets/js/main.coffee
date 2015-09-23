@@ -21,14 +21,29 @@ render = (stage, userData, mapData)->
   getNode = (id)->
     layer.findOne('#node-'+id)
   hideNodeTree = (rootNode)->
-    for subNodeId in map_nodes[rootNode.getId()].sub_nodes
+    subNodes = map_nodes[rootNode.getId()].sub_nodes
+    for subNodeId in subNodes
       hideNodeTree(getNode(subNodeId))
+    if subNodes.length > 0
+      for bg in rootNode.find('.node-collapsed-bg')
+        bg.show()
     rootNode.hide()
-  toggleNode = (node)->
-    if not node.isVisible()
-      node.show()
-    else
-      hideNodeTree(node)
+  toggleNode = (node) ->
+    nodeObj = map_nodes[node.getId()]
+    collapsed = false
+    for subNodeId in nodeObj.sub_nodes
+      subNode = getNode(subNodeId)
+      if not subNode.isVisible()
+        subNode.show()
+      else
+        collapsed = true
+        hideNodeTree(subNode)
+    if nodeObj.sub_nodes.length > 0
+      for bg in node.find('.node-collapsed-bg')
+        if collapsed
+          bg.show()
+        else
+          bg.hide()
   buildNode = (node)->
     nodeText = new Konva.Text
       text: node.text
@@ -95,6 +110,37 @@ render = (stage, userData, mapData)->
     nodeGroup = new Konva.Group
       draggable: true
       visible: false
+    if node.sub_nodes.length > 0
+      nodeRect2 = new Konva.Rect
+        x: 10
+        y: 10
+        name: "node-bg node-collapsed-bg"
+        stroke: '#555'
+        strokeWidth: 5
+        fill: '#ddd'
+        width: NODE_WIDTH
+        height: nodeText.getHeight() + infoBarHeight
+        shadowColor: 'black'
+        shadowBlur: 10
+        shadowOffset: [10, 10]
+        shadowOpacity: 0.2
+        cornerRadius: 10
+      nodeRect3 = new Konva.Rect
+        x: 20
+        y: 20
+        name: "node-bg node-collapsed-bg"
+        stroke: '#555'
+        strokeWidth: 5
+        fill: '#ddd'
+        width: NODE_WIDTH
+        height: nodeText.getHeight() + infoBarHeight
+        shadowColor: 'black'
+        shadowBlur: 10
+        shadowOffset: [10, 10]
+        shadowOpacity: 0.2
+        cornerRadius: 10
+      nodeGroup.add(nodeRect3)
+      nodeGroup.add(nodeRect2)
     nodeGroup.add(nodeRect)
     nodeGroup.add(nodeText)
     nodeGroup.add(nodeInfoBar)
@@ -142,15 +188,15 @@ render = (stage, userData, mapData)->
     nodeGroup.on 'mousedown touchstart', ()->
       @.moveToTop()
       if active_node == null or active_node != @
-        @.findOne('.node-bg').stroke('#375A7F')
+        for bg in @.find('.node-bg')
+          bg.stroke('#375A7F')
       if active_node != null and active_node != @
-        active_node.findOne('.node-bg').stroke('#555')
+        for bg in active_node.find('.node-bg')
+          bg.stroke('#555')
       active_node = @
       stage.draw()
     nodeGroup.on 'dblclick dbltap', ()->
-      currentNode = map_nodes[@.getId()]
-      for subNodeId in currentNode.sub_nodes
-        toggleNode(getNode(subNodeId))
+      toggleNode(@)
       stage.draw()
     layer.add(nodeGroup)
   layout()

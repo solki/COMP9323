@@ -32,23 +32,52 @@
       return layer.findOne('#node-' + id);
     };
     hideNodeTree = function(rootNode) {
-      var i, len, ref, subNodeId;
-      ref = map_nodes[rootNode.getId()].sub_nodes;
-      for (i = 0, len = ref.length; i < len; i++) {
-        subNodeId = ref[i];
+      var bg, i, j, len, len1, ref, subNodeId, subNodes;
+      subNodes = map_nodes[rootNode.getId()].sub_nodes;
+      for (i = 0, len = subNodes.length; i < len; i++) {
+        subNodeId = subNodes[i];
         hideNodeTree(getNode(subNodeId));
+      }
+      if (subNodes.length > 0) {
+        ref = rootNode.find('.node-collapsed-bg');
+        for (j = 0, len1 = ref.length; j < len1; j++) {
+          bg = ref[j];
+          bg.show();
+        }
       }
       return rootNode.hide();
     };
     toggleNode = function(node) {
-      if (!node.isVisible()) {
-        return node.show();
-      } else {
-        return hideNodeTree(node);
+      var bg, collapsed, i, j, len, len1, nodeObj, ref, ref1, results, subNode, subNodeId;
+      nodeObj = map_nodes[node.getId()];
+      collapsed = false;
+      ref = nodeObj.sub_nodes;
+      for (i = 0, len = ref.length; i < len; i++) {
+        subNodeId = ref[i];
+        subNode = getNode(subNodeId);
+        if (!subNode.isVisible()) {
+          subNode.show();
+        } else {
+          collapsed = true;
+          hideNodeTree(subNode);
+        }
+      }
+      if (nodeObj.sub_nodes.length > 0) {
+        ref1 = node.find('.node-collapsed-bg');
+        results = [];
+        for (j = 0, len1 = ref1.length; j < len1; j++) {
+          bg = ref1[j];
+          if (collapsed) {
+            results.push(bg.show());
+          } else {
+            results.push(bg.hide());
+          }
+        }
+        return results;
       }
     };
     buildNode = function(node) {
-      var infoBarHeight, nodeAuthorText, nodeDownVoteBtn, nodeGroup, nodeInfoBar, nodeInfoBarRect, nodeRect, nodeText, nodeUpVoteBtn, nodeVoteBtnGroup, voteBtnGroupWidth;
+      var infoBarHeight, nodeAuthorText, nodeDownVoteBtn, nodeGroup, nodeInfoBar, nodeInfoBarRect, nodeRect, nodeRect2, nodeRect3, nodeText, nodeUpVoteBtn, nodeVoteBtnGroup, voteBtnGroupWidth;
       nodeText = new Konva.Text({
         text: node.text,
         fontSize: TITLE_TEXT_SIZE,
@@ -123,6 +152,40 @@
         draggable: true,
         visible: false
       });
+      if (node.sub_nodes.length > 0) {
+        nodeRect2 = new Konva.Rect({
+          x: 10,
+          y: 10,
+          name: "node-bg node-collapsed-bg",
+          stroke: '#555',
+          strokeWidth: 5,
+          fill: '#ddd',
+          width: NODE_WIDTH,
+          height: nodeText.getHeight() + infoBarHeight,
+          shadowColor: 'black',
+          shadowBlur: 10,
+          shadowOffset: [10, 10],
+          shadowOpacity: 0.2,
+          cornerRadius: 10
+        });
+        nodeRect3 = new Konva.Rect({
+          x: 20,
+          y: 20,
+          name: "node-bg node-collapsed-bg",
+          stroke: '#555',
+          strokeWidth: 5,
+          fill: '#ddd',
+          width: NODE_WIDTH,
+          height: nodeText.getHeight() + infoBarHeight,
+          shadowColor: 'black',
+          shadowBlur: 10,
+          shadowOffset: [10, 10],
+          shadowOpacity: 0.2,
+          cornerRadius: 10
+        });
+        nodeGroup.add(nodeRect3);
+        nodeGroup.add(nodeRect2);
+      }
       nodeGroup.add(nodeRect);
       nodeGroup.add(nodeText);
       nodeGroup.add(nodeInfoBar);
@@ -188,24 +251,27 @@
       nodeGroup = buildNode(node);
       nodeGroup.setId(nodeId);
       nodeGroup.on('mousedown touchstart', function() {
+        var bg, j, k, len1, len2, ref1, ref2;
         this.moveToTop();
         if (active_node === null || active_node !== this) {
-          this.findOne('.node-bg').stroke('#375A7F');
+          ref1 = this.find('.node-bg');
+          for (j = 0, len1 = ref1.length; j < len1; j++) {
+            bg = ref1[j];
+            bg.stroke('#375A7F');
+          }
         }
         if (active_node !== null && active_node !== this) {
-          active_node.findOne('.node-bg').stroke('#555');
+          ref2 = active_node.find('.node-bg');
+          for (k = 0, len2 = ref2.length; k < len2; k++) {
+            bg = ref2[k];
+            bg.stroke('#555');
+          }
         }
         active_node = this;
         return stage.draw();
       });
       nodeGroup.on('dblclick dbltap', function() {
-        var currentNode, j, len1, ref1, subNodeId;
-        currentNode = map_nodes[this.getId()];
-        ref1 = currentNode.sub_nodes;
-        for (j = 0, len1 = ref1.length; j < len1; j++) {
-          subNodeId = ref1[j];
-          toggleNode(getNode(subNodeId));
-        }
+        toggleNode(this);
         return stage.draw();
       });
       layer.add(nodeGroup);
