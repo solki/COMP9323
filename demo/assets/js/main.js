@@ -21,10 +21,10 @@
   };
 
   render = function(stage, userData, mapData) {
-    var INFO_TEXT_SIZE, NODE_WIDTH, TITLE_TEXT_SIZE, active_node, buildNode, getNode, hideNodeTree, i, layer, len, map_nodes, node, nodeGroup, nodeId, ref, toggleNode;
-    NODE_WIDTH = 300;
-    TITLE_TEXT_SIZE = 32;
-    INFO_TEXT_SIZE = 18;
+    var INFO_TEXT_SIZE, NODE_WIDTH, TITLE_TEXT_SIZE, active_node, buildNode, getNode, hideNodeTree, i, layer, layout, layoutLevel, len, map_nodes, node, nodeGroup, nodeId, ref, toggleNode;
+    NODE_WIDTH = 200;
+    TITLE_TEXT_SIZE = 18;
+    INFO_TEXT_SIZE = 12;
     layer = new Konva.Layer();
     map_nodes = {};
     active_node = null;
@@ -128,6 +128,58 @@
       nodeGroup.add(nodeInfoBar);
       return nodeGroup;
     };
+    layoutLevel = function(level, angleStart, parentNodes) {
+      var angle, angleStep, base_offset_x, childNodes, first_angle, i, ind, j, k, len, len1, len2, parentNode, ref, spaceCount, spaceStart, subNode, subNodeCount, subNodeId;
+      spaceCount = 0;
+      if (parentNodes.length > 1) {
+        spaceCount = parentNodes.length;
+      }
+      spaceStart = 0;
+      for (ind = i = 0, len = parentNodes.length; i < len; ind = ++i) {
+        parentNode = parentNodes[ind];
+        subNodeCount = map_nodes[parentNode.getId()].sub_nodes.length;
+        spaceCount += subNodeCount;
+        if (ind === 0 && subNodeCount > 0) {
+          spaceStart = -(subNodeCount - 1) / 2.0;
+        }
+      }
+      angleStep = 2 * Math.PI / spaceCount;
+      angle = angleStart + spaceStart * angleStep;
+      base_offset_x = (stage.getWidth() - NODE_WIDTH) / 2;
+      childNodes = [];
+      first_angle = 0;
+      for (j = 0, len1 = parentNodes.length; j < len1; j++) {
+        parentNode = parentNodes[j];
+        ref = map_nodes[parentNode.getId()].sub_nodes;
+        for (k = 0, len2 = ref.length; k < len2; k++) {
+          subNodeId = ref[k];
+          subNode = getNode(subNodeId);
+          subNode.setPosition({
+            x: base_offset_x + Math.cos(angle) * NODE_WIDTH * level * 1.2,
+            y: (stage.getHeight() - subNode.findOne('.node-bg').getHeight()) / 2 + Math.sin(angle) * NODE_WIDTH * level * 0.8
+          });
+          childNodes.push(subNode);
+          if (childNodes.length === 1) {
+            first_angle = angle;
+          }
+          angle += angleStep;
+        }
+        angle += angleStep;
+      }
+      if (childNodes.length > 0) {
+        return layoutLevel(level + 1, first_angle, childNodes);
+      }
+    };
+    layout = function() {
+      var rootNode;
+      rootNode = getNode(mapData.root_node_id);
+      rootNode.show();
+      rootNode.setPosition({
+        x: (stage.getWidth() - NODE_WIDTH) / 2,
+        y: (stage.getHeight() - rootNode.findOne('.node-bg').getHeight()) / 2
+      });
+      return layoutLevel(1, -Math.PI / 2, [rootNode]);
+    };
     ref = mapData.node_list;
     for (i = 0, len = ref.length; i < len; i++) {
       node = ref[i];
@@ -158,7 +210,7 @@
       });
       layer.add(nodeGroup);
     }
-    getNode(mapData.root_node_id).show();
+    layout();
     return stage.add(layer);
   };
 

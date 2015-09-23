@@ -12,9 +12,9 @@ init = ()->
     stage.setHeight(window.innerHeight)
 
 render = (stage, userData, mapData)->
-  NODE_WIDTH = 300
-  TITLE_TEXT_SIZE = 32
-  INFO_TEXT_SIZE = 18
+  NODE_WIDTH = 200
+  TITLE_TEXT_SIZE = 18
+  INFO_TEXT_SIZE = 12
   layer = new Konva.Layer()
   map_nodes = {}
   active_node = null
@@ -99,6 +99,41 @@ render = (stage, userData, mapData)->
     nodeGroup.add(nodeText)
     nodeGroup.add(nodeInfoBar)
     return nodeGroup
+  layoutLevel = (level, angleStart, parentNodes)->
+    spaceCount = 0
+    if parentNodes.length > 1
+      spaceCount = parentNodes.length
+    spaceStart = 0
+    for parentNode, ind in parentNodes
+      subNodeCount = map_nodes[parentNode.getId()].sub_nodes.length
+      spaceCount += subNodeCount
+      if ind == 0 and subNodeCount > 0
+          spaceStart = -(subNodeCount - 1) / 2.0
+    angleStep = 2 * Math.PI / spaceCount
+    angle = angleStart + spaceStart * angleStep
+    base_offset_x = (stage.getWidth() - NODE_WIDTH) / 2
+    childNodes = []
+    first_angle = 0
+    for parentNode in parentNodes
+      for subNodeId in map_nodes[parentNode.getId()].sub_nodes
+        subNode = getNode(subNodeId)
+        subNode.setPosition
+          x: base_offset_x + Math.cos(angle) * NODE_WIDTH * level * 1.2
+          y: (stage.getHeight() - subNode.findOne('.node-bg').getHeight()) / 2 + Math.sin(angle) * NODE_WIDTH * level * 0.8
+        childNodes.push(subNode)
+        if childNodes.length == 1
+          first_angle = angle
+        angle += angleStep
+      angle += angleStep
+    if childNodes.length > 0
+      layoutLevel(level+1, first_angle, childNodes)
+  layout = ()->
+    rootNode = getNode(mapData.root_node_id)
+    rootNode.show()
+    rootNode.setPosition
+      x: (stage.getWidth() - NODE_WIDTH) / 2
+      y: (stage.getHeight() - rootNode.findOne('.node-bg').getHeight()) / 2
+    layoutLevel(1, - Math.PI / 2, [rootNode])
   for node in mapData.node_list
     nodeId = "node-" + node.id
     map_nodes[nodeId] = node
@@ -118,7 +153,7 @@ render = (stage, userData, mapData)->
         toggleNode(getNode(subNodeId))
       stage.draw()
     layer.add(nodeGroup)
-  getNode(mapData.root_node_id).show()
+  layout()
   stage.add(layer)
 
 init()
