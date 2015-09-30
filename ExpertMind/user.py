@@ -1,6 +1,7 @@
 __author__ = 'YUN'
 
 from db_connect import ConnectDB
+from porc import Patch
 import json
 
 
@@ -38,6 +39,9 @@ class User(object):
         status = response.status_code
         reason = response.reason
         if status == 201:
+            patch = Patch()
+            patch.add("_id", response.key)
+            client.patch('users', response.key, patch)
             result = {"result": "success", "message": reason}
             return result
         else:
@@ -74,6 +78,7 @@ class User(object):
     def update(user_key, user):
         client = ConnectDB().connect()
         response = client.put('users', user_key, {
+            "_id": user_key,
             "username": user.username,
             "loginToken": user.loginToken,
             "email": user.email,
@@ -92,6 +97,10 @@ class User(object):
     # delete_user a specific user with key
     @staticmethod
     def delete(user_key):
+        user = User.retrieveById(user_key)
+        if None == user:
+            result = {"result": "failed", "message": "user doesn't exist"}
+            return result
         client = ConnectDB().connect()
         response = client.delete('users', user_key)
         user = User.retrieveById(user_key)

@@ -1,7 +1,7 @@
 __author__ = 'YUN'
 
 from db_connect import ConnectDB
-
+from porc import Patch
 
 class Vote(object):
     def __init__(self, vote_type, description, vote_user, vote_at, vote_on_node):
@@ -25,6 +25,9 @@ class Vote(object):
         status = response.status_code
         reason = response.reason
         if status == 201:
+            patch = Patch()
+            patch.add("_id", response.key)
+            client.patch('votes', response.key, patch)
             result = {"result": "success", "message": reason}
             return result
         else:
@@ -61,6 +64,7 @@ class Vote(object):
     def update(vote_key, vote):
         client = ConnectDB().connect()
         response = client.put('votes', vote_key, {
+            "_id": vote_key,
             "type": vote.type,
             "description": vote.description,
             "voteUser": vote.voteUser,
@@ -79,10 +83,20 @@ class Vote(object):
     # delete a specific vote with vote_key
     @staticmethod
     def delete(vote_key):
+        vote = Vote.retrieveById(vote_key)
+        if None == vote:
+            result = {"result": "failed", "message": "vote doesn't exist"}
+            return result
         client = ConnectDB().connect()
         response = client.delete('votes', vote_key)
-        response.raise_for_status()
-        return response
+        vote = Vote.retrieveById(vote_key)
+        if None == vote:
+            result = {"result": "success", "message": "success"}
+            return result
+        else:
+            reason = response.reason
+            result = {"result": "failed", "message": reason}
+            return result
 
     # Retrieve votes for a specific node key and vote type
     # Return the vote number
