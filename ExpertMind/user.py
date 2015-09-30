@@ -26,7 +26,7 @@ class User(object):
 
     # Create a user record to db
     # Return True if insert record success, else return False
-    def create_user(self):
+    def create(self):
         client = ConnectDB().connect()
         response = client.post('users', {
             "username": self.username,
@@ -36,45 +36,42 @@ class User(object):
             "registerAt": self.registerAt
         })
         status = response.status_code
+        reason = response.reason
         if status == 201:
-            return True
+            result = {"result": "success", "message": reason}
+            return result
         else:
-            return False
-            # response.raise_for_status()
+            result = {"result": "failed", "message": reason}
+            return result
 
     # Retrieve a specific user by user key
-    # Return a user object if find, else return None
+    # Return a user json if find, else return None
     @staticmethod
-    def retrieve_user_by_id(user_key):
+    def retrieveById(user_key):
         client = ConnectDB().connect()
         response = client.get('users', user_key)
-        # user_json = response.json
         status = response.status_code
         if status == 200:
-            user = User(response['username'], response['loginToken'], response['email'], response['intro'],
-                        response['registerAt'])
-            return user
+            return response.json
         else:
             return None
 
     # Retrieve all users
-    # Return a list of users
+    # Return a list of users (json)
     @staticmethod
-    def retrieve_all_users():
+    def retrieveAll():
         client = ConnectDB().connect()
         user_list = []
         user_list_response = client.list('users').all()
         for user_res in user_list_response:
             value = user_res['value']
-            user = User(value['username'], value['loginToken'], value['email'], value['intro'], value['registerAt'])
-            user_list.append(user)
-        # print len(user_list)
+            user_list.append(value)
         return user_list
 
     # Update a specific user with user key and a user object
-    # Return True if update record success, else False
+    # Return result msg (json)
     @staticmethod
-    def update_user(user_key, user):
+    def update(user_key, user):
         client = ConnectDB().connect()
         response = client.put('users', user_key, {
             "username": user.username,
@@ -84,14 +81,25 @@ class User(object):
             "registerAt": user.registerAt
         })
         status = response.status_code
+        reason = response.reason
         if status == 201:
-            return True
+            result = {"result": "success", "message": reason}
+            return result
         else:
-            return False
+            result = {"result": "failed", "message": reason}
+            return result
 
     # delete_user a specific user with key
     @staticmethod
-    def delete_user(user_key):
+    def delete(user_key):
         client = ConnectDB().connect()
         response = client.delete('users', user_key)
-        response.raise_for_status()
+        user = User.retrieveById(user_key)
+        if None == user:
+            result = {"result": "success", "message": "success"}
+            return result
+        else:
+            reason = response.reason
+            result = {"result": "failed", "message": reason}
+            return result
+

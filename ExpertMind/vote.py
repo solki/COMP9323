@@ -1,7 +1,6 @@
 __author__ = 'YUN'
 
 from db_connect import ConnectDB
-import json
 
 
 class Vote(object):
@@ -24,27 +23,28 @@ class Vote(object):
             "voteOnNode": self.voteOnNode
         })
         status = response.status_code
+        reason = response.reason
         if status == 201:
-            return True
+            result = {"result": "success", "message": reason}
+            return result
         else:
-            return False
+            result = {"result": "failed", "message": reason}
+            return result
 
     # Retrieve vote by vote key
-    # Return vote object if find, else return None
+    # Return vote json if find, else return None
     @staticmethod
     def retrieveById(vote_key):
         client = ConnectDB().connect()
         response = client.get('votes', vote_key)
         status = response.status_code
         if status == 200:
-            vote = Vote(response['type'], response['description'], response['voteUser'], response['voteAt'],
-                        response['voteOnNode'])
-            return vote
+            return response.json
         else:
             return None
 
     # Retrieve all vote
-    # Return a list of vote object
+    # Return a list of vote (json)
     @staticmethod
     def retrieveAll():
         client = ConnectDB().connect()
@@ -52,13 +52,11 @@ class Vote(object):
         vote_list_response = client.list('votes').all()
         for vote_res in vote_list_response:
             value = vote_res['value']
-            vote = Vote(value['type'], value['description'], value['voteUser'], value['voteAt'], value['voteOnNode'])
-            vote_list.append(vote)
+            vote_list.append(value)
         return vote_list
-        # return vote_list_response
 
     # Update a specific vote with vote key and a vote object
-    # Return True if update record success, else False
+    # Return result msg (json)
     @staticmethod
     def update(vote_key, vote):
         client = ConnectDB().connect()
@@ -70,10 +68,21 @@ class Vote(object):
             "voteOnNode": vote.voteOnNode
         })
         status = response.status_code
+        reason = response.reason
         if status == 201:
-            return True
+            result = {"result": "success", "message": reason}
+            return result
         else:
-            return False
+            result = {"result": "failed", "message": reason}
+            return result
+
+    # delete a specific vote with vote_key
+    @staticmethod
+    def delete(vote_key):
+        client = ConnectDB().connect()
+        response = client.delete('votes', vote_key)
+        response.raise_for_status()
+        return response
 
     # Retrieve votes for a specific node key and vote type
     # Return the vote number
@@ -82,4 +91,3 @@ class Vote(object):
         client = ConnectDB().connect()
         vote_list = client.search('votes', 'voteOnNode:'+node_key + ' AND type:'+vote_type).all()
         return len(vote_list)
-    
