@@ -1,0 +1,21 @@
+body {
+	font-family: Verdana, sans-serif;
+}
+
+td, ul, ol, ul, li, dl, dt, dd {
+	font-family: Verdana, sans-serif;
+}
+
+p {
+	font-family: Times, "Times New Roman", serif;
+	text-indent: 2em;
+}
+
+//
+派生选择器  li中的strong元素格式
+
+li strong{
+	font-style: italic;
+	font-size: 100;
+	font-weight: normal;
+}
