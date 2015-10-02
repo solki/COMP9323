@@ -14,32 +14,30 @@ class JSONResponse(HttpResponse):
         super(JSONResponse, self).__init__(content, **kwargs)
 
 
-# @csrf_exempt
-# def create_new_node(request):
-#     if request.method == 'POST':
-#         print request
-#         try:
-#             data = JSONParser().parse(request)
-#         except Exception, e:
-#             error = {
-#                 "success": "false",
-#                 "data": {},
-#                 "error_message": str(e)
-#             }
-#             return JSONResponse(error)
-#         node = Nodes().create(data["nodeDisplay"], data["nodeDescription"], data["nodeTags"], data["nodeParents"], data["nodeChildren"], data["nodeVotes"], data["nodeStatus"])
-#         response_data = {
-#             "success": "true",
-#             "data": node
-#         }
-#         return JSONResponse(response_data)
-#     else: # only allow POST
-#         error = {
-#             "success": "false",
-#             "data": {},
-#             "error_message": "Only POST allowed for node creation."
-#         }
-#         return JSONResponse(error)
+@csrf_exempt
+# POST /expertmind_service/create_new_node/
+# Accept application/json and the following keys:
+#   nodeDisplay
+#   nodeDescription
+def create_new_node(request):
+    if request.method == 'POST':
+        print request
+        try:
+            data = JSONParser().parse(request)
+            data_checker.check_create_new_node(data)
+        except Exception, e:
+            error = dict(success="false", data={}, error_message=str(e))
+            return JSONResponse(error)
+        node = Nodes().create(data["nodeDisplay"], data["nodeDescription"], data["nodeTags"], data["nodeParents"],
+                              data["nodeChildren"], data["nodeVotes"], data["nodeStatus"])
+        create_node_response = {
+            "success": "true",
+            "data": node
+        }
+        return JSONResponse(create_node_response)
+    else:  # only allow POST
+        error = dict(success="false", data={}, error_message="Only POST allowed for node creation.")
+        return JSONResponse(error)
 
 
 @csrf_exempt
@@ -77,6 +75,7 @@ def add_child_node(request):
         return JSONResponse(error)
 
 
+@csrf_exempt
 # GET /expertmind_service/get_node_by_id/[node_id]
 def get_node_by_id(request, node_id):
     if request.method == 'GET':
@@ -86,6 +85,13 @@ def get_node_by_id(request, node_id):
                 return JSONResponse(error)
 
             node_got = Nodes().retrieveById(node_id)
+            if 'code' in node_got and node_got['code'] == 'items_not_found': # not found in database
+                no_node_response = {
+                    "success": "true",
+                    "data": "No node found with _id = %s" % node_id
+                }
+                return JSONResponse(no_node_response)
+
             get_node_by_id_response = {
                 "success": "true",
                 "data": node_got
@@ -99,6 +105,7 @@ def get_node_by_id(request, node_id):
         return JSONResponse(error)
 
 
+@csrf_exempt
 # GET /expertmind_service/get_descendant_nodes/[node_id]
 def get_descendant_nodes(request, node_id):
     if request.method == 'GET':
@@ -123,6 +130,7 @@ def get_descendant_nodes(request, node_id):
         return JSONResponse(error)
 
 
+@csrf_exempt
 # GET /expertmind_service/get_child_nodes/[node_id]
 def get_child_nodes(request, node_id):
     if request.method == 'GET':
@@ -147,6 +155,7 @@ def get_child_nodes(request, node_id):
         return JSONResponse(error)
 
 
+@csrf_exempt
 # GET /expertmind_service/get_mindmap/
 def get_mindmap(request):
     if request.method == 'GET':

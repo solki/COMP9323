@@ -75,12 +75,12 @@ class Nodes(object):
             _list = 'This node has no child'
         return _list
 
-    def retrieveDescendent(self, _id):
+    def retrieveDescendant(self, _id):
         conn = ConnectDB().connect()
         node = conn.get('test_nodes', _id)
         _list = node['nodeChildren']
         if not _list:
-            _list = 'This node has no child.'
+            _list = 'This node has no descendant node.'
         for child in _list:
             findChild(child, _list, conn)
         return _list
