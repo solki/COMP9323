@@ -1,4 +1,6 @@
-init = ()->
+init = ->
+  SCALE_MIN = 0.2
+  SCALE_MAX = 2.0
   stage = new Konva.Stage
     container: 'container'
     width: window.innerWidth
@@ -7,9 +9,29 @@ init = ()->
     $.get 'map-sample.json', (mapData)->
       render(stage, userData, mapData)
 
-  $(window).on 'resize orientationchange', ()->
+  $(window).on 'resize orientationchange', ->
     stage.setWidth(window.innerWidth)
     stage.setHeight(window.innerHeight)
+  .on 'mousewheel', (e)->
+    offset = stage.offset()
+    mouse = stage.getPointerPosition()
+    scale = stage.scale().x
+    newScale = scale + e.originalEvent.wheelDelta / 2000.0
+    newScale = Math.max(SCALE_MIN, Math.min(SCALE_MAX, newScale))
+    stage.scale
+      x: newScale
+      y: newScale
+    stage.offset
+      x: offset.x + (mouse.x - offset.x) * (1 - scale / newScale)
+      y: offset.y + (mouse.y - offset.y) * (1 - scale / newScale)
+    stage.draw()
+  .on 'keydown', (e)->
+    switch e.keyCode
+      when 37 then stage.offsetX(stage.offsetX() + 10)
+      when 38 then stage.offsetY(stage.offsetY() + 10)
+      when 39 then stage.offsetX(stage.offsetX() - 10)
+      when 40 then stage.offsetY(stage.offsetY() - 10)
+    stage.draw()
 
 render = (stage, userData, mapData)->
   NODE_WIDTH = 200
@@ -18,9 +40,10 @@ render = (stage, userData, mapData)->
   layer = new Konva.Layer()
   map_nodes = {} # map from nodeId to node data object
   active_node = null
+  drag_anchor = {}
 
   getNode = (id)->
-    layer.findOne('#node-'+id)
+    layer.findOne('#node-' + id)
 
   hideNodeTree = (rootNode)->
     subNodes = map_nodes[rootNode.getId()].sub_nodes
@@ -43,12 +66,17 @@ render = (stage, userData, mapData)->
       else
         collapsed = true
         hideNodeTree(subNode)
+    if collapsed
+      node.addName('collapsed')
+    else
+      node.removeName('collapsed')
     if nodeObj.sub_nodes.length > 0
       for bg in node.find('.node-collapsed-bg')
         if collapsed
           bg.show()
         else
           bg.hide()
+    updateParentLinks(node)
 
   buildNode = (node)->
     nodeText = new Konva.Text
@@ -152,6 +180,8 @@ render = (stage, userData, mapData)->
     nodeGroup.add(nodeRect)
     nodeGroup.add(nodeText)
     nodeGroup.add(nodeInfoBar)
+    nodeGroup.addName('node')
+    nodeGroup.addName('collapsed') if node.sub_nodes.length > 0
     return nodeGroup
 
   layoutLevel = (level, angleStart, parentNodes)->
@@ -163,7 +193,7 @@ render = (stage, userData, mapData)->
       subNodeCount = map_nodes[parentNode.getId()].sub_nodes.length
       spaceCount += subNodeCount
       if ind == 0 and subNodeCount > 0
-          spaceStart = -(subNodeCount - 1) / 2.0
+        spaceStart = -(subNodeCount - 1) / 2.0
     angleStep = 2 * Math.PI / spaceCount
     angle = angleStart + spaceStart * angleStep
     base_offset_x = (stage.getWidth() - NODE_WIDTH) / 2
@@ -181,14 +211,14 @@ render = (stage, userData, mapData)->
         angle += angleStep
       angle += angleStep
     if childNodes.length > 0
-      layoutLevel(level+1, first_angle, childNodes)
+      layoutLevel(level + 1, first_angle, childNodes)
 
   layout = (rootNode)->
     rootNode.show()
     rootNode.setPosition
       x: (stage.getWidth() - NODE_WIDTH) / 2
       y: (stage.getHeight() - rootNode.getHeight()) / 2
-    layoutLevel(1, - Math.PI / 2, [rootNode])
+    layoutLevel(1, -Math.PI / 2, [rootNode])
 
   computeLinkPoints = (startNode, endNode)->
     x1 = startNode.x()
@@ -199,27 +229,37 @@ render = (stage, userData, mapData)->
     y2 = endNode.y()
     w2 = endNode.width()
     h2 = endNode.height()
-    if x1 > x2 + w2 # sub node at left side
+    margin =
+      top: 5
+      bottom: 5
+      left: 5
+      right: 5
+    if endNode.hasName('collapsed')
+      margin.bottom = margin.right = 25
+    if x1 > x2 + w2 + margin.right # sub node at left side
       return [
-        x1, y1 + h1 / 2,
-        x2 + w2, y2 + h2 / 2
+        x1, y1 + h1 / 2.0,
+        x2 + w2 + margin.right, y2 + h2 / 2.0
       ]
-    if x1 + w1 < x2 # sub node at right side
+    if x1 + w1< x2 - margin.left # sub node at right side
       return [
-        x1 + w1, y1 + h1 / 2,
-        x2, y2 + h2 / 2
+        x1 + w1, y1 + h1 / 2.0,
+        x2 - margin.left, y2 + h2 / 2.0
       ]
-    if y1 > y2 + h2 # sub node at top side
+    if y1 > y2 + h2 + margin.bottom # sub node at top side
       return [
-        x1 + w1 / 2, y1,
-        x2 + w2 / 2, y2 + h2
+        x1 + w1 / 2.0, y1,
+        x2 + w2 / 2.0, y2 + h2 + margin.bottom
       ]
-    if y1 + h1 < y2 # sub node at bottom side
+    if y1 + h1 < y2 - margin.top # sub node at bottom side
       return [
-        x1 + w1 / 2, y1 + h1,
-        x2 + w2 / 2, y2
+        x1 + w1 / 2.0, y1 + h1,
+        x2 + w2 / 2.0, y2 - margin.top
       ]
-    return []
+    return [
+      x1 + w1 / 2.0, y1 + h1 / 2.0,
+      x1 + w1 / 2.0, y1 + h1 / 2.0
+    ]
 
   buildLinks = (parentNode)->
     for subNodeId in map_nodes[parentNode.getId()].sub_nodes
@@ -229,7 +269,7 @@ render = (stage, userData, mapData)->
         name: "from-#{parentNode.getId()} to-#{subNode.getId()}"
         points: points
         pointerLength: 12
-        pointerWidth : 12
+        pointerWidth: 12
         fill: 'black'
         stroke: 'black'
         strokeWidth: 4
@@ -237,12 +277,38 @@ render = (stage, userData, mapData)->
       layer.add(link)
       buildLinks(subNode)
 
+  moveSubNodes = (parentNode, move)->
+    targetId = parentNode.getId()
+    for link in layer.find(".from-#{targetId}")
+      endPoint = null
+      for name in link.name().split(' ')
+        if name.indexOf('to-') == 0
+          endPoint = layer.findOne("#" + name.substr(3))
+          break
+      if endPoint != null
+        anchor = drag_anchor[endPoint.getId()]
+        endPoint.position
+          x: anchor.x + move.x
+          y: anchor.y + move.y
+        moveSubNodes(endPoint, move)
+        link.points(computeLinkPoints(parentNode, endPoint))
+
+  updateParentLinks = (node) ->
+    for link in layer.find(".to-#{node.getId()}")
+      startPoint = null
+      for name in link.name().split(' ')
+        if name.indexOf('from-') == 0
+          startPoint = layer.findOne("#" + name.substr(5))
+          break
+      if startPoint != null
+        link.points(computeLinkPoints(startPoint, node))
+
   for node in mapData.node_list
     nodeId = "node-" + node.id
     map_nodes[nodeId] = node
     nodeGroup = buildNode(node)
     nodeGroup.setId(nodeId)
-    nodeGroup.on 'mousedown touchstart', ()->
+    nodeGroup.on 'mousedown touchstart', ->
       @.moveToTop()
       if active_node == null or active_node != @
         for bg in @.find('.node-bg')
@@ -252,23 +318,19 @@ render = (stage, userData, mapData)->
           bg.stroke('#555')
       active_node = @
       stage.draw()
-    nodeGroup.on 'dragmove', ()->
-      links = []
-      for link in layer.find(".from-#{@.getId()}")
-        links.push(link)
-      for link in layer.find(".to-#{@.getId()}")
-        links.push(link)
-      for link in links
-        startPoint = null
-        endPoint = null
-        for name in link.name().split(' ')
-          if name.indexOf('from-') == 0
-            startPoint = layer.findOne("#"+name.substr(5))
-          else if name.indexOf('to-') == 0
-            endPoint = layer.findOne("#"+name.substr(3))
-        if startPoint != null and endPoint != null
-          link.points(computeLinkPoints(startPoint, endPoint))
-    nodeGroup.on 'dblclick dbltap', ()->
+    nodeGroup.on 'dragstart', (e)->
+      for node in layer.find(".node")
+        drag_anchor[node.getId()] = node.position()
+    .on 'dragmove', (e)->
+      targetId = @.getId()
+      anchor = drag_anchor[targetId]
+      pos = @.position()
+      move =
+        x: pos.x - anchor.x
+        y: pos.y - anchor.y
+      moveSubNodes(@, move)
+      updateParentLinks(@)
+    .on 'dblclick dbltap', ->
       toggleNode(@)
       stage.draw()
     layer.add(nodeGroup)
