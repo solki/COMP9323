@@ -11,15 +11,15 @@ Before deploy and use ExpertMind REST Service codes on your computer, please mak
 - 1. Deployment
   - Pull from branch *expertmind_services_hansmong* to your computer
   - Use PIP to install Django framework
-      *pip install Django &#35; see https://docs.djangoproject.com/en/1.8/topics/install/#installing-official-release*
+      ```pip install Django &#35; see https://docs.djangoproject.com/en/1.8/topics/install/#installing-official-release```
   - Use PIP to install Django REST framework support
-      *pip install djangorestframework*
-      *pip install markdown*
-      *pip install django-filter &#35; see http://www.django-rest-framework.org/#installation*
+      ```pip install djangorestframework```
+      ```pip install markdown```
+      ```pip install django-filter &#35; see http://www.django-rest-framework.org/#installation```
 - 2. Startup
   - Go into the root folder of *the service* in a Terminal or &#42;nix shell environment
   - In the Terminal or &#42;nix shell environment, type the following command:
-      *python manage.py runserver
+      ```python manage.py runserver```
   - In a browser, type *http://localhost:8000/expertmind_services/* to test if the services have been started up successfully.
 - 3. Usage
   - a. Node operation
@@ -41,4 +41,9 @@ Before deploy and use ExpertMind REST Service codes on your computer, please mak
         ]
       }
     *Note: in current version of the services, only one parent for each node will be taken into consideration. That means if you pass a JSON body with multiple nodeParents, the services will take the first parent as the parent of the child node to be added.*
-    - (working on the GET ones...)
+    - Get information of a Node by its ID
+      *GET /expertmind_service/get_node_by_id/[node_id]*
+    - Get information of descendant nodes of a Node by its ID
+      *GET /expertmind_service/get_descendant_nodes/[node_id]*
+    - Get information of children nodes of a Node by its ID
+      *GET /expertmind_service/get_child_nodes/[node_id]*
