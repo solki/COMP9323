@@ -5,3 +5,9 @@ project of comp9323
 
 *I love md!*
 *Hey, guys. Seems no way to modify the name of this project. Why not create a new one?*
+
+# ExpertMind REST Service Deployment & Usage
+- 1. Deployment
+  -   
+- 2. Usage
+  -
