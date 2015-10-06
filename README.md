@@ -23,4 +23,22 @@ Before deploy and use ExpertMind REST Service codes on your computer, please mak
   - In a browser, type *http://localhost:8000/expertmind_services/* to test if the services have been started up successfully.
 - 3. Usage
   - a. Node operation
-    - POST /expertmind_service/create_new_node/
+    - Create a new node by the following
+    *POST /expertmind_service/create_new_node/*
+      with the JSON body like
+      {
+        "nodeDisplay": "This is a test Node name",
+        "nodeDescription": "This is a test Node description"
+      }
+    - Add a child node to an existed node
+    *POST /expertmind_service/add_child_node/*
+      with the JSON body like
+      {
+        "nodeDisplay": "this is a test child node name",
+        "nodeDescription": "this is a test child node description",
+        "nodeParents"0: [
+          {"_id": "someParentId"}
+        ]
+      }
+    *Note: in current version of the services, only one parent for each node will be taken into consideration. That means if you pass a JSON body with multiple nodeParents, the services will take the first parent as the parent of the child node to be added.*
+    - (working on the GET ones...)
