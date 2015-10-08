@@ -54,7 +54,7 @@
   };
 
   render = function(stage, userData, mapData) {
-    var INFO_TEXT_SIZE, NODE_WIDTH, TITLE_TEXT_SIZE, active_node, buildLinks, buildNode, computeLinkPoints, drag_anchor, getNode, hideNodeTree, i, layer, layout, layoutLevel, len, map_nodes, moveSubNodes, node, nodeGroup, nodeId, ref, rootNode, toggleNode, updateParentLinks;
+    var INFO_TEXT_SIZE, NODE_WIDTH, TITLE_TEXT_SIZE, active_node, buildLinks, buildNode, computeLinkPoints, drag_anchor, getNode, hideNodeTree, i, layer, layout, layoutLevel, len, map_nodes, moveSubNodes, node, nodeGroup, nodeId, ref, rootNode, setupAnchor, toggleNode, updateParentLinks;
     NODE_WIDTH = 200;
     TITLE_TEXT_SIZE = 18;
     INFO_TEXT_SIZE = 12;
@@ -116,6 +116,19 @@
       }
       return updateParentLinks(node);
     };
+    setupAnchor = function(node, onClick) {
+      return node.on('mouseover', function() {
+        return document.body.style.cursor = 'pointer';
+      }).on('mouseout', function() {
+        return document.body.style.cursor = 'default';
+      }).on('click tap', function(evt) {
+        if (onClick) {
+          onClick();
+          evt.evt.stopPropagation();
+          return evt.evt.preventDefault();
+        }
+      });
+    };
     buildNode = function(node) {
       var infoBarHeight, nodeAuthorText, nodeDownVoteBtn, nodeGroup, nodeInfoBar, nodeInfoBarRect, nodeRect, nodeRect2, nodeRect3, nodeText, nodeUpVoteBtn, nodeVoteBtnGroup, voteBtnGroupWidth;
       nodeText = new Konva.Text({
@@ -141,6 +154,12 @@
         fill: '#555',
         padding: 9,
         x: nodeUpVoteBtn.getWidth()
+      });
+      setupAnchor(nodeUpVoteBtn, function() {
+        return alert("Upvoted \"" + node.text + "\"");
+      });
+      setupAnchor(nodeDownVoteBtn, function() {
+        return alert("Downvoted \"" + node.text + "\"");
       });
       nodeAuthorText = new Konva.Text({
         text: "by " + node.author.name,

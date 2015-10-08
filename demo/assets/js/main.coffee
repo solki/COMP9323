@@ -78,6 +78,18 @@ render = (stage, userData, mapData)->
           bg.hide()
     updateParentLinks(node)
 
+  setupAnchor = (node, onClick)->
+    node.on 'mouseover', ->
+      document.body.style.cursor = 'pointer'
+    .on 'mouseout', ->
+      document.body.style.cursor = 'default'
+    .on 'click tap', (evt)->
+      if onClick
+        onClick()
+        evt.evt.stopPropagation()
+        evt.evt.preventDefault()
+
+
   buildNode = (node)->
     nodeText = new Konva.Text
       text: node.text
@@ -100,6 +112,8 @@ render = (stage, userData, mapData)->
       fill: '#555'
       padding: 9
       x: nodeUpVoteBtn.getWidth()
+    setupAnchor(nodeUpVoteBtn, ->alert("Upvoted \"#{node.text}\""))
+    setupAnchor(nodeDownVoteBtn, ->alert("Downvoted \"#{node.text}\""))
     nodeAuthorText = new Konva.Text
       text: "by #{node.author.name}"
       fontSize: INFO_TEXT_SIZE
