@@ -7,3 +7,5 @@ project of comp9323
 *Hey, guys. Seems no way to modify the name of this project. Why not create a new one?*
 
 This project is moved to: [ExpertMind](https://github.com/lrcry/ExpertMind)
+
+finaly I found the way to change the name of repo, its in the repo setting.
